@@ -1,0 +1,11 @@
+# 文件以及目录过滤
+# 过滤library目录
+TAnimation/Library/
+# 过滤.vs目录
+TAnimation/.vs/
+# 过滤Temp目录
+TAnimation/Temp/
+# 过滤obj目录
+TAnimation/obj/
+# 过滤Log目录
+TAnimation/Log/
