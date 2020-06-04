@@ -50,6 +50,11 @@ namespace TAnimation
         public bool IsReverse = false;
 
         /// <summary>
+        /// 是否已经初始化
+        /// </summary>
+        protected bool HasInit = false;
+
+        /// <summary>
         /// 当前动画状态
         /// </summary>
         protected EAnimState mAnimState = EAnimState.WaitStart;
@@ -67,12 +72,12 @@ namespace TAnimation
         /// <summary>
         /// 插值动画开始回调
         /// </summary>
-        protected event Action<TBaseAnimation> mOnLerpAnimBeginEvent;
+        private event Action<TBaseAnimation> mOnLerpAnimBeginEvent;
 
         /// <summary>
         /// 插值动画结束回调
         /// </summary>
-        protected event Action<TBaseAnimation> mOnLerpAnimEndEvent;
+        private event Action<TBaseAnimation> mOnLerpAnimEndEvent;
 
         protected void Awake()
         {
@@ -94,25 +99,23 @@ namespace TAnimation
         /// </summary>
         public void StartAnim(Action<TBaseAnimation> onlerpanimendcb = null, Action<TBaseAnimation> onlerpanimbegincb = null)
         {
-            if (gameObject.activeInHierarchy && enabled)
+            if (IsAvalibleToPlay())
             {
-                if (mAnimState == EAnimState.WaitStart || mAnimState == EAnimState.Ended)
+                if (mAnimState == EAnimState.Executing)
                 {
-                    mOnLerpAnimBeginEvent = onlerpanimbegincb;
-                    mOnLerpAnimEndEvent = onlerpanimendcb;
-                    mAnimState = EAnimState.Executing;
-                    if(Mathf.Approximately(StartDelayTime, float.Epsilon))
-                    {
-                        mAnimCoroutine = StartCoroutine(LerpCoroutine());
-                    }
-                    else
-                    {
-                        mDelayStartCoroutine = StartCoroutine(DelayStartCoroutine());
-                    }
+                    Debug.Log("插值动画正在进行中，强制打断重新开始!");
+                    ForceStopAnim();
+                }
+                mOnLerpAnimBeginEvent = onlerpanimbegincb;
+                mOnLerpAnimEndEvent = onlerpanimendcb;
+                mAnimState = EAnimState.Executing;
+                if(Mathf.Approximately(StartDelayTime, float.Epsilon))
+                {
+                    mAnimCoroutine = StartCoroutine(LerpCoroutine());
                 }
                 else
                 {
-                    Debug.LogError("插值动画正在进行中，请等待执行结束后再重新开始!");
+                    mDelayStartCoroutine = StartCoroutine(DelayStartCoroutine());
                 }
             }
             else
@@ -122,12 +125,35 @@ namespace TAnimation
         }
 
         /// <summary>
+        /// 强制结束动画
+        /// </summary>
+        public void ForceStopAnim()
+        {
+            if (mAnimState == EAnimState.Executing)
+            {
+                if (mAnimCoroutine != null)
+                {
+                    StopCoroutine(mAnimCoroutine);
+                }
+                mAnimCoroutine = null;
+                if (mDelayStartCoroutine != null)
+                {
+                    StopCoroutine(mDelayStartCoroutine);
+                }
+                mDelayStartCoroutine = null;
+                mOnLerpAnimBeginEvent = null;
+                //强制结束也算结束，调用是为了确保外部逻辑进行正常
+                OnLerpAnimEnd();
+            }
+        }
+
+        /// <summary>
         /// 是否可播放
         /// </summary>
         /// <returns></returns>
         public bool IsAvalibleToPlay()
         {
-            if(gameObject.activeInHierarchy && enabled && (mAnimState == EAnimState.WaitStart || mAnimState == EAnimState.Ended))
+            if(gameObject.activeInHierarchy && enabled)
             {
                 return true;
             }
@@ -150,7 +176,9 @@ namespace TAnimation
         /// </summary>
         protected virtual void OnLerpAnimEnd()
         {
-
+            mAnimState = EAnimState.Ended;
+            mOnLerpAnimEndEvent?.Invoke(this);
+            mOnLerpAnimEndEvent = null;
         }
 
         /// <summary>
@@ -181,10 +209,7 @@ namespace TAnimation
                 yield return null;
             }
             DoLerp(starttime, endtime, Time.time);
-            mAnimState = EAnimState.Ended;
             OnLerpAnimEnd();
-            mOnLerpAnimEndEvent?.Invoke(this);
-            mOnLerpAnimEndEvent = null;
         }
 
         /// <summary>

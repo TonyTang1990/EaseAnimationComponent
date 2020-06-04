@@ -31,9 +31,9 @@ namespace TAnimation
         public Color EndColor = Color.white;
 
         /// <summary>
-        /// Image组件
+        /// Graphic组件
         /// </summary>
-        protected Image mImageComponent;
+        protected Graphic mGraphicComponent;
 
         /// <summary>
         /// 响应插值开始(执行插值动画准备工作)
@@ -41,9 +41,9 @@ namespace TAnimation
         protected override void OnLerpAnimStart()
         {
             base.OnLerpAnimStart();
-            if(mImageComponent == null)
+            if(mGraphicComponent == null)
             {
-                mImageComponent = GetComponent<Image>();
+                mGraphicComponent = GetComponent<Graphic>();
             }
         }
 
@@ -54,7 +54,7 @@ namespace TAnimation
         protected override void DoLerpAnim(float t)
         {
             var newcolor = Color.Lerp(StartColor, EndColor, t);
-            mImageComponent.color = newcolor;
+            mGraphicComponent.color = newcolor;
         }
     }
 }

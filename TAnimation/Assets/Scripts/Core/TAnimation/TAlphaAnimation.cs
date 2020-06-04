@@ -61,7 +61,10 @@ namespace TAnimation
         protected override void OnLerpAnimEnd()
         {
             base.OnLerpAnimEnd();
-            mCanvasGroupComponent.alpha = StartAlpha;
+            if(RecoverBeginValueAtEnd)
+            {
+                mCanvasGroupComponent.alpha = StartAlpha;
+            }
         }
 
         /// <summary>

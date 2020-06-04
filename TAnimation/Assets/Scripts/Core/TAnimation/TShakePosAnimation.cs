@@ -1,4 +1,4 @@
-ï»¿/*
+/*
  * Description:             TShakePosAnimation.cs
  * Author:                  TANGHUAN
  * Create Date:             2020/06/03
@@ -10,17 +10,17 @@ using UnityEngine;
 namespace TAnimation
 {
     /// <summary>
-    /// æ’å€¼ä½ç½®æŠ–åŠ¨åŠ¨ç”»
+    /// ²åÖµÎ»ÖÃ¶¶¶¯¶¯»­
     /// </summary>
     public class TShakePosAnimation : TShakeBaseAnimation
     {
         /// <summary>
-        /// èµ·å§‹æœ¬åœ°ä½ç½®
+        /// ÆğÊ¼±¾µØÎ»ÖÃ
         /// </summary>
         protected Vector3 mBeginLocalPos;
 
         /// <summary>
-        /// å“åº”æ’å€¼åŠ¨ç”»å¼€å§‹
+        /// ÏìÓ¦²åÖµ¶¯»­¿ªÊ¼
         /// </summary>
         protected override void OnLerpAnimStart()
         {
@@ -29,7 +29,7 @@ namespace TAnimation
         }
 
         /// <summary>
-        /// æ™ƒåŠ¨ä½ç½®
+        /// »Î¶¯Î»ÖÃ
         /// </summary>
         /// <param name="offset"></param>
         protected override void OnShake(Vector3 offset)
@@ -38,7 +38,7 @@ namespace TAnimation
         }
 
         /// <summary>
-        /// ç»“æŸæ—¶æ¢å¤
+        /// ½áÊøÊ±»Ö¸´
         /// </summary>
         protected override void Restore()
         {

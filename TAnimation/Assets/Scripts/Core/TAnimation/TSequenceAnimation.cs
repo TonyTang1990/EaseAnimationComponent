@@ -12,7 +12,7 @@ using UnityEngine;
 namespace TAnimation
 {
     /// <summary>
-    /// 序列动画信息
+    /// 选中动画信息
     /// </summary>
     [Serializable]
     public class TAnimationInfo
@@ -90,9 +90,24 @@ namespace TAnimation
         private List<TBaseAnimation> mParalWailtedCompletedAnimationList = new List<TBaseAnimation>();
 
         /// <summary>
+        /// 当前线性正在播放的动画
+        /// </summary>
+        private TBaseAnimation mCurrentLinearPlayAnimation;
+
+        /// <summary>
         /// 线性序列动画下一个播放索引
         /// </summary>
         private int mLinearPlayAnimationNextIndex = 0;
+
+        /// <summary>
+        /// 插值序列动画开始回调
+        /// </summary>
+        private event Action<TSequenceAnimation> mOnSequenceAnimBeginEvent;
+
+        /// <summary>
+        /// 插值序列动画结束回调
+        /// </summary>
+        private event Action<TSequenceAnimation> mOnSequenceAnimEndEvent;
 
         protected void Awake()
         {
@@ -101,64 +116,102 @@ namespace TAnimation
                 StartAllAnim();
             }
         }
-        
+
         /// <summary>
         /// 开始所有动画(强制所有动画重新播放)
+        /// <param name="onsequenceanimendcb"/>插值序列动画结束回调</param>
+        /// <param name="onsequenceanimbegincb"/>插值序列动画开始回调</param>
         /// </summary>
-        public void StartAllAnim()
+        public void StartAllAnim(Action<TSequenceAnimation> onsequenceanimendcb = null, Action<TSequenceAnimation> onsequenceanimbegincb = null)
         {
-            if (gameObject.activeInHierarchy && enabled)
+            if (IsAvalibleToPlay())
             {
-                if (mAnimState == EAnimState.WaitStart || mAnimState == EAnimState.Ended)
+                if (mAnimState == EAnimState.Executing)
                 {
-                    if(SequenceType == ESequenceType.Paral)
+                    Debug.Log("序列动画正在进行中，强制打断重新开始!");
+                    ForceStopAnims();
+                }
+                mOnSequenceAnimBeginEvent = onsequenceanimbegincb;
+                mOnSequenceAnimEndEvent = onsequenceanimendcb;
+                if (SequenceType == ESequenceType.Paral)
+                {
+                    mAnimState = EAnimState.Executing;
+                    mParalWailtedCompletedAnimationList.Clear();
+                    for (int i = 0, length = AnimationInfoList.Count; i < length; i++)
                     {
-                        mAnimState = EAnimState.Executing;
-                        mParalWailtedCompletedAnimationList.Clear();
-                        for (int i = 0, length = AnimationInfoList.Count; i < length; i++)
+                        if (AnimationInfoList[i].ControlAnimation != null)
                         {
-                            if (AnimationInfoList[i].ControlAnimation != null)
+                            if (AnimationInfoList[i].ControlAnimation.IsAvalibleToPlay())
                             {
-                                if (AnimationInfoList[i].ControlAnimation.IsAvalibleToPlay())
-                                {
-                                    mParalWailtedCompletedAnimationList.Add(AnimationInfoList[i].ControlAnimation);
-                                    AnimationInfoList[i].ControlAnimation?.StartAnim(OnParalAnimationPlayCompleted);
-                                }
-                                else
-                                {
-                                    Debug.LogWarning($"动画:{AnimationInfoList[i].ControlAnimation.GetType().Name}不符合播放条件，无法通过序列组动画对象:{gameObject.name}并发播放!");
-                                }
+                                mParalWailtedCompletedAnimationList.Add(AnimationInfoList[i].ControlAnimation);
+                                AnimationInfoList[i].ControlAnimation?.StartAnim(OnParalAnimationPlayCompleted);
                             }
                             else
                             {
-                                Debug.LogWarning($"序列动画索引:{i}的动画组件为空，无法并发播放!");
+                                Debug.LogWarning($"动画:{AnimationInfoList[i].ControlAnimation.GetType().Name}不符合播放条件，无法通过序列组动画对象:{gameObject.name}并发播放!");
                             }
                         }
-                        //没有有效动画的话，直接触发完成
-                        if(mParalWailtedCompletedAnimationList.Count == 0)
+                        else
                         {
-                            OnPlaySequenceAnimationEnd();
+                            Debug.LogWarning($"序列动画索引:{i}的动画组件为空，无法并发播放!");
                         }
                     }
-                    else if(SequenceType == ESequenceType.Linear)
+                    //没有有效动画的话，直接触发完成
+                    if(mParalWailtedCompletedAnimationList.Count == 0)
                     {
-                        mAnimState = EAnimState.Executing;
-                        mLinearPlayAnimationNextIndex = 0;
-                        PlayNextLinearAnimation();
+                        OnPlaySequenceAnimationEnd();
                     }
-                    else
-                    {
-                        Debug.LogError($"不支持的序列动画类型:{SequenceType}");
-                    }
+                }
+                else if(SequenceType == ESequenceType.Linear)
+                {
+                    mAnimState = EAnimState.Executing;
+                    mLinearPlayAnimationNextIndex = 0;
+                    PlayNextLinearAnimation();
                 }
                 else
                 {
-                    Debug.LogError("序列动画正在进行中，请等待执行结束后再重新开始!");
+                    Debug.LogError($"不支持的序列动画类型:{SequenceType}");
                 }
             }
             else
             {
                 Debug.LogError($"当前脚本:{GetType().Name}或所在对象:{gameObject.name}处于未激活状态，播放所有失败!");
+            }
+        }
+
+        /// <summary>
+        /// 强制打断当前序列动画
+        /// </summary>
+        public void ForceStopAnims()
+        {
+            // 强制线性播放到最后一个，强制结束
+            mLinearPlayAnimationNextIndex = AnimationInfoList.Count;
+            if (mCurrentLinearPlayAnimation != null)
+            {
+                mCurrentLinearPlayAnimation.ForceStopAnim();
+            }
+            mCurrentLinearPlayAnimation = null;
+            foreach (var waitedcompletedanimation in mParalWailtedCompletedAnimationList.ToArray())
+            {
+                waitedcompletedanimation.ForceStopAnim();
+            }
+            mParalWailtedCompletedAnimationList.Clear();
+            mOnSequenceAnimBeginEvent = null;
+        }
+
+        /// <summary>
+        /// 是否可播放
+        /// </summary>
+        /// <returns></returns>
+        public bool IsAvalibleToPlay()
+        {
+            if (gameObject.activeInHierarchy && enabled)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -169,6 +222,8 @@ namespace TAnimation
         {
             Debug.Log($"序列动画对象:{gameObject.name}动画播放完成!");
             mAnimState = EAnimState.Ended;
+            mOnSequenceAnimEndEvent?.Invoke(this);
+            mOnSequenceAnimEndEvent = null;
         }
 
         /// <summary>
@@ -192,6 +247,7 @@ namespace TAnimation
         private void OnLinearAnimationPlayCompleted(TBaseAnimation tanim)
         {
             Debug.Log($"线性序列-动画:{tanim.GetType().Name}播放完成,下一个等待播放动画索引:{mLinearPlayAnimationNextIndex}!");
+            mCurrentLinearPlayAnimation = null;
             PlayNextLinearAnimation();
         }
 
@@ -202,7 +258,6 @@ namespace TAnimation
         {
             if(mLinearPlayAnimationNextIndex < AnimationInfoList.Count)
             {
-                TBaseAnimation nextanimationtoplay = null;
                 for(int i = mLinearPlayAnimationNextIndex, length = AnimationInfoList.Count; i < length; i++)
                 {
                     if(AnimationInfoList[mLinearPlayAnimationNextIndex].ControlAnimation != null)
@@ -210,7 +265,7 @@ namespace TAnimation
                         if (AnimationInfoList[mLinearPlayAnimationNextIndex].ControlAnimation.IsAvalibleToPlay())
                         {
                             mLinearPlayAnimationNextIndex = i + 1;
-                            nextanimationtoplay = AnimationInfoList[i].ControlAnimation;
+                            mCurrentLinearPlayAnimation = AnimationInfoList[i].ControlAnimation;
                             break;
                         }
                         else
@@ -223,9 +278,9 @@ namespace TAnimation
                         Debug.LogWarning($"序列动画索引:{i}的动画组件为空，无法线性播放!");
                     }
                 }
-                if(nextanimationtoplay != null)
+                if(mCurrentLinearPlayAnimation != null)
                 {
-                    nextanimationtoplay.StartAnim(OnLinearAnimationPlayCompleted);
+                    mCurrentLinearPlayAnimation.StartAnim(OnLinearAnimationPlayCompleted);
                 }
                 else
                 {

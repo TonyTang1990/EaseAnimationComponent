@@ -1,4 +1,4 @@
-ï»¿/*
+/*
  * Description:             TShakeBaseAnimation.cs
  * Author:                  TANGHUAN
  * Create Date:             2020/06/03
@@ -9,23 +9,23 @@ using UnityEngine;
 namespace TAnimation
 {
     /// <summary>
-    /// æŠ–åŠ¨æ’å€¼åŠ¨ç”»åŸºç±»
+    /// ¶¶¶¯²åÖµ¶¯»­»ùÀà
     /// </summary>
     public abstract class TShakeBaseAnimation : TBaseAnimation
     {
         /// <summary>
-        /// æŠ–åŠ¨å¼ºåº¦(x,y,zåˆ†åˆ«ä»£è¡¨ä¸‰ä¸ªè½´çš„å¼ºåº¦)
+        /// ¶¶¶¯Ç¿¶È(x,y,z·Ö±ğ´ú±íÈı¸öÖáµÄÇ¿¶È)
         /// </summary>
-        [Tooltip("æŠ–åŠ¨å¼ºåº¦(x,y,zåˆ†åˆ«ä»£è¡¨ä¸‰ä¸ªè½´çš„å¼ºåº¦)")]
+        [Tooltip("¶¶¶¯Ç¿¶È(x,y,z·Ö±ğ´ú±íÈı¸öÖáµÄÇ¿¶È)")]
         public Vector3 ShakeStrength = Vector3.zero;
         
         /// <summary>
-        /// åç§»
+        /// Æ«ÒÆ
         /// </summary>
         private Vector3 mOffset = Vector3.zero;
 
         /// <summary>
-        /// æ’å€¼åŠ¨ç”»ç»“æŸ
+        /// ²åÖµ¶¯»­½áÊø
         /// </summary>
         protected override void OnLerpAnimEnd()
         {
@@ -33,9 +33,9 @@ namespace TAnimation
         }
 
         /// <summary>
-        /// æ‰§è¡ŒçœŸå®æ’å€¼åŠ¨ç”»æ•ˆæœ
+        /// Ö´ĞĞÕæÊµ²åÖµ¶¯»­Ğ§¹û
         /// </summary>
-        /// <param name="t">ç¼“åŠ¨è¿›åº¦(0-1)</param>
+        /// <param name="t">»º¶¯½ø¶È(0-1)</param>
         protected override void DoLerpAnim(float t)
         {
             mOffset.x = Random.Range(-1.0f, 1.0f) * ShakeStrength.x * t;
@@ -51,7 +51,7 @@ namespace TAnimation
         protected abstract void OnShake(Vector3 offset);
 
         /// <summary>
-        /// ç»“æŸæ—¶æ¢å¤
+        /// ½áÊøÊ±»Ö¸´
         /// </summary>
         protected abstract void Restore();
     }
