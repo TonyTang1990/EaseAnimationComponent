@@ -17,22 +17,27 @@ namespace TAnimation
     public class TRotateAnimation : TBaseAnimation
     {
         /// <summary>
+        /// 动画类型
+        /// </summary>
+        [Header("动画类型")]
+        public AnimType AnimType = AnimType.Absolute;
+
+        /// <summary>
         /// 起始欧拉角
         /// </summary>
-        [Tooltip("起始欧拉角")]
+        [Header("起始欧拉角")]
         public Vector3 StartEulerAngles = Vector3.zero;
 
         /// <summary>
         /// 结束欧拉角
         /// </summary>
-        [Tooltip("结束欧拉角")]
+        [Header("结束欧拉角")]
         public Vector3 EndEulerAngles = Vector3.zero;
 
         /// <summary>
-        /// 相对坐标系
+        /// 缓动开始局部欧拉角
         /// </summary>
-        [Tooltip("相对坐标系")]
-        public Space RelativeCoordinateSystem = Space.Self;
+        protected Vector3 mLerpStartLocalEulerAngels;
 
         /// <summary>
         /// 响应插值开始(执行插值动画准备工作)
@@ -40,6 +45,7 @@ namespace TAnimation
         protected override void OnLerpAnimStart()
         {
             base.OnLerpAnimStart();
+            mLerpStartLocalEulerAngels = transform.localEulerAngles;
         }
 
         /// <summary>
@@ -48,14 +54,25 @@ namespace TAnimation
         /// <param name="t">缓动进度(0-1)</param>
         protected override void DoLerpAnim(float t)
         {
-            if(RelativeCoordinateSystem == Space.Self)
+            if(AnimType == AnimType.Relative)
             {
-                transform.localEulerAngles = Vector3.LerpUnclamped(StartEulerAngles, EndEulerAngles, t);
+                var startLocalEulerAngels = mLerpStartLocalEulerAngels + StartEulerAngles;
+                var endLocalEulerAngels = mLerpStartLocalEulerAngels + EndEulerAngles;
+                transform.localEulerAngles = Vector3.Lerp(startLocalEulerAngels, endLocalEulerAngels, t);
             }
-            else
+            else if(AnimType == AnimType.Absolute)
             {
-                transform.eulerAngles = Vector3.LerpUnclamped(StartEulerAngles, EndEulerAngles, t);
+                transform.eulerAngles = Vector3.Lerp(StartEulerAngles, EndEulerAngles, t);
             }
+        }
+
+        /// <summary>
+        /// 差值动画结束前
+        /// </summary>
+        protected override void OnBeforeLerpAnimEnd()
+        {
+            base.OnBeforeLerpAnimEnd();
+            mLerpStartLocalEulerAngels = Vector3.zero;
         }
     }
 }

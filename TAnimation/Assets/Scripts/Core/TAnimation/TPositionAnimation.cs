@@ -17,14 +17,27 @@ namespace TAnimation
     public class TPositionAnimation : TBaseAnimation
     {
         /// <summary>
-        /// 起始本地位置
+        /// 动画类型
         /// </summary>
-        public Vector3 StartLocalPos = Vector3.zero;
+        [Header("动画类型")]
+        public AnimType AnimType = AnimType.Absolute;
 
         /// <summary>
-        /// 结束本地位置
+        /// 起始位置
         /// </summary>
-        public Vector3 EndLocalPos = Vector3.zero;
+        [Header("起始位置")]
+        public Vector3 StartPos = Vector3.zero;
+
+        /// <summary>
+        /// 结束位置
+        /// </summary>
+        [Header("结束位置")]
+        public Vector3 EndPos = Vector3.zero;
+
+        /// <summary>
+        /// 缓动开始局部坐标位置
+        /// </summary>
+        protected Vector3 mLerpStartLocalPos;
 
         /// <summary>
         /// 响应插值开始(执行插值动画准备工作)
@@ -32,6 +45,7 @@ namespace TAnimation
         protected override void OnLerpAnimStart()
         {
             base.OnLerpAnimStart();
+            mLerpStartLocalPos = gameObject.transform.localPosition;
         }
 
         /// <summary>
@@ -40,7 +54,25 @@ namespace TAnimation
         /// <param name="t">缓动进度(0-1)</param>
         protected override void DoLerpAnim(float t)
         {
-            transform.localPosition = Vector3.LerpUnclamped(StartLocalPos, EndLocalPos, t);
+            if(AnimType == AnimType.Relative)
+            {
+                var startLocalPosition = mLerpStartLocalPos + StartPos;
+                var endLocalPosition = mLerpStartLocalPos + EndPos;
+                transform.localPosition = Vector3.Lerp(startLocalPosition, endLocalPosition, t);
+            }
+            else if(AnimType == AnimType.Absolute)
+            {
+                transform.position = Vector3.Lerp(StartPos, EndPos, t);
+            }
+        }
+
+        /// <summary>
+        /// 差值动画结束前
+        /// </summary>
+        protected override void OnBeforeLerpAnimEnd()
+        {
+            base.OnBeforeLerpAnimEnd();
+            mLerpStartLocalPos = Vector3.zero;
         }
     }
 }

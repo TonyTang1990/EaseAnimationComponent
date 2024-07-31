@@ -1,5 +1,5 @@
 /*
- * Description:             EAnimType.cs
+ * Description:             AnimType.cs
  * Author:                  TONYTANG
  * Create Date:             2020/05/31
  */
@@ -11,14 +11,12 @@ using UnityEngine;
 namespace TAnimation
 {
     /// <summary>
-    /// EAnimType.cs
-    /// 插值动画类型枚举
+    /// AnimType.cs
+    /// 动画类型枚举
     /// </summary>
-    public enum EAnimType
+    public enum AnimType
     {
-        None = 1,
-        PositionAnim,
-        ScaleAnim,
-        AlphaAnim,
+        Absolute = 0,               // 绝对
+        Relative = 1,               // 相对
     }
 }

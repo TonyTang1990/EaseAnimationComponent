@@ -50,6 +50,8 @@ namespace TAnimation
     /// <summary>
     /// TAnimationGroup.cs
     /// 序列动画
+    /// Note:
+    /// 序列动画里的动画组件不能设置循环动画
     /// </summary>
     public class TSequenceAnimation : MonoBehaviour
     {
@@ -65,14 +67,20 @@ namespace TAnimation
         /// <summary>
         /// 是否Awake时触发播放
         /// </summary>
-        [Tooltip("是否Awake时触发播放")]
+        [Header("是否Awake时触发播放")]
         public bool PlayAllOnAwake = true;
 
         /// <summary>
         /// 序列动画类型
         /// </summary>
-        [Tooltip("序列类型")]
+        [Header("序列类型")]
         public ESequenceType SequenceType = ESequenceType.Paral;
+
+        /// <summary>
+        /// 是否是循环动画
+        /// </summary>
+        [Header("是否是循环动画")]
+        public bool IsLoop;
 
         /// <summary>
         /// 动画列表
@@ -80,9 +88,53 @@ namespace TAnimation
         public List<TAnimationInfo> AnimationInfoList = new List<TAnimationInfo>();
 
         /// <summary>
+        /// 是否等待执行
+        /// </summary>
+        public bool IsWaitStart
+        {
+            get
+            {
+                return mAnimState == AnimState.WaitStart;
+            }
+        }
+
+        /// <summary>
+        /// 是否执行中
+        /// </summary>
+        public bool IsExecuting
+        {
+            get
+            {
+                return mAnimState == AnimState.Executing;
+            }
+        }
+
+        /// <summary>
+        /// 是否暂停中
+        /// </summary>
+        public bool IsPaused
+        {
+            get
+            {
+                return mAnimState == AnimState.Paused;
+            }
+        }
+
+        /// <summary>
+        /// 是否已结束
+        /// </summary>
+        public bool IsEnded
+        {
+            get
+            {
+                return mAnimState == AnimState.Ended;
+            }
+        }
+
+        /// <summary>
         /// 当前序列动画状态
         /// </summary>
-        protected EAnimState mAnimState = EAnimState.WaitStart;
+        protected AnimState mAnimState = AnimState.WaitStart;
 
         /// <summary>
         /// 并发序列动画等待完成的动画列表
@@ -101,11 +153,15 @@ namespace TAnimation
 
         /// <summary>
         /// 插值序列动画开始回调
+        /// Note:
+        /// 循环动画仅第一次回调
         /// </summary>
         private event Action<TSequenceAnimation> mOnSequenceAnimBeginEvent;
 
         /// <summary>
         /// 插值序列动画结束回调
+        /// Note:
+        /// 循环动画仅第一次完成回调
         /// </summary>
         private event Action<TSequenceAnimation> mOnSequenceAnimEndEvent;
 
@@ -126,7 +182,8 @@ namespace TAnimation
         {
             if (IsAvalibleToPlay())
             {
-                if (mAnimState == EAnimState.Executing)
+                TurnOffAllLoopAnims();
+                if (mAnimState == AnimState.Executing)
                 {
                     Debug.Log("序列动画正在进行中，强制打断重新开始!");
                     ForceStopAnims();
@@ -135,7 +192,7 @@ namespace TAnimation
                 mOnSequenceAnimEndEvent = onsequenceanimendcb;
                 if (SequenceType == ESequenceType.Paral)
                 {
-                    mAnimState = EAnimState.Executing;
+                    mAnimState = AnimState.Executing;
                     mParalWailtedCompletedAnimationList.Clear();
                     for (int i = 0, length = AnimationInfoList.Count; i < length; i++)
                     {
@@ -164,7 +221,7 @@ namespace TAnimation
                 }
                 else if(SequenceType == ESequenceType.Linear)
                 {
-                    mAnimState = EAnimState.Executing;
+                    mAnimState = AnimState.Executing;
                     mLinearPlayAnimationNextIndex = 0;
                     PlayNextLinearAnimation();
                 }
@@ -180,23 +237,65 @@ namespace TAnimation
         }
 
         /// <summary>
-        /// 强制打断当前序列动画
+        /// 关闭所有循环子动画
         /// </summary>
-        public void ForceStopAnims()
+        protected void TurnOffAllLoopAnims()
         {
-            // 强制线性播放到最后一个，强制结束
-            mLinearPlayAnimationNextIndex = AnimationInfoList.Count;
-            if (mCurrentLinearPlayAnimation != null)
+            for(int i = 0, length = AnimationInfoList.Count; i < length; i++)
             {
-                mCurrentLinearPlayAnimation.ForceStopAnim();
+                var animationInfo = AnimationInfoList[i];
+                if(animationInfo != null && animationInfo.ControlAnimation != null &&
+                    animationInfo.ControlAnimation.IsLoop)
+                {
+                    Debug.LogWarning($"TSequenceAnimation里包含循环类型自动组件：{animationInfo.ControlAnimation.GetType().Name},自动修改成非循环类型动画！");
+                    animationInfo.ControlAnimation.LoopType = LoopType.None;
+                }
             }
-            mCurrentLinearPlayAnimation = null;
-            foreach (var waitedcompletedanimation in mParalWailtedCompletedAnimationList.ToArray())
+        }
+
+        /// <summary>
+        /// 暂停所有动画
+        /// </summary>
+        public void PauseAllAnim()
+        {
+            if (IsExecuting)
             {
-                waitedcompletedanimation.ForceStopAnim();
+                OnPauseAllAnim();
             }
-            mParalWailtedCompletedAnimationList.Clear();
-            mOnSequenceAnimBeginEvent = null;
+        }
+
+        /// <summary>
+        /// 继续所有动画
+        /// </summary>
+        public void ResumeAllAnim()
+        {
+            if (IsPaused)
+            {
+                OnResumeAllAnim();
+            }
+        }
+
+        /// <summary>
+        /// 结束所有动画
+        /// </summary>
+        public void StopAllAnim()
+        {
+            if (IsExecuting || IsPaused)
+            {
+                // 强制线性播放到最后一个，强制结束
+                mLinearPlayAnimationNextIndex = AnimationInfoList.Count;
+                if (mCurrentLinearPlayAnimation != null)
+                {
+                    mCurrentLinearPlayAnimation.ForceStopAnim();
+                }
+                mCurrentLinearPlayAnimation = null;
+                foreach (var waitedcompletedanimation in mParalWailtedCompletedAnimationList.ToArray())
+                {
+                    waitedcompletedanimation.ForceStopAnim();
+                }
+                mParalWailtedCompletedAnimationList.Clear();
+
+            }
         }
 
         /// <summary>
@@ -216,14 +315,66 @@ namespace TAnimation
         }
 
         /// <summary>
+        /// 响应所有动画暂停
+        /// </summary>
+        protected virtual void OnPauseAllAnim()
+        {
+            if (!IsExecuting)
+            {
+                Debug.LogError($"实体对象:{gameObject.name}的动画组件:{GetType().Name}处于运行中，不应该进入暂停动画流程，请检查代码！");
+                return;
+            }
+            mAnimState = AnimState.Paused;
+            if (SequenceType == ESequenceType.Paral)
+            {
+                foreach (var waitedCompletedAnimation in mParalWailtedCompletedAnimationList.ToArray())
+                {
+                    waitedCompletedAnimation?.PauseAnim();
+                }
+            }
+            else if (SequenceType == ESequenceType.Linear)
+            {
+                mCurrentLinearPlayAnimation?.PauseAnim();
+            }
+        }
+
+        /// <summary>
+        /// 响应所有动画继续
+        /// </summary>
+        protected virtual void OnResumeAllAnim()
+        {
+            if (!IsPaused)
+            {
+                Debug.LogError($"实体对象:{gameObject.name}的动画组件:{GetType().Name}处于暂停中，不应该进入继续动画流程，请检查代码！");
+                return;
+            }
+            mAnimState = AnimState.Executing;
+            if (SequenceType == ESequenceType.Paral)
+            {
+                foreach (var waitedCompletedAnimation in mParalWailtedCompletedAnimationList.ToArray())
+                {
+                    waitedCompletedAnimation?.ResumeAnim();
+                }
+            }
+            else if (SequenceType == ESequenceType.Linear)
+            {
+                mCurrentLinearPlayAnimation?.ResumeAnim();
+            }
+        }
+
+        /// <summary>
         /// 序列动画播放完成
         /// </summary>
         private void OnPlaySequenceAnimationEnd()
         {
             Debug.Log($"序列动画对象:{gameObject.name}动画播放完成!");
-            mAnimState = EAnimState.Ended;
+            mAnimState = AnimState.Ended;
             mOnSequenceAnimEndEvent?.Invoke(this);
             mOnSequenceAnimEndEvent = null;
+            if(IsLoop)
+            {
+                StartAllAnim();
+            }
         }
 
         /// <summary>

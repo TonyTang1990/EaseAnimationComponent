@@ -8,7 +8,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
     <ProjectGuid>{E809F7B3-33AE-E72F-09BE-30ADD50B4A24}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -61,7 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Core\TAnimation\Editor\TAnimationGroupInspector.cs" />
-    <Compile Include="Assets\Scripts\Core\TAnimation\Editor\TSequenceAnimationInspector.cs" />
+    <Compile Include="Assets\Scripts\Core\TAnimation\Editor\TSequenceAnimationEditor.cs" />
     <Compile Include="Assets\Scripts\Editor\AssetProcesserHook\ScriptKeywordProcesser.cs" />
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>G:/Projects/GitHubProjects/Ease-Component/TAnimation/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>

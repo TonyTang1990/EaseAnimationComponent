@@ -1,4 +1,4 @@
-﻿/*
+﻿﻿/*
  * Description:             TAnimationGroupInspector.cs
  * Author:                  TONYTANG
  * Create Date:             2020/05/31
@@ -19,6 +19,11 @@ namespace TAnimation
     [CustomEditor(typeof(TSequenceAnimation))]
     public class TSequenceAnimationInspector : Editor
     {
+        /// <summary>
+        /// 目标组件
+        /// </summary>
+        private TSequenceAnimation mTarget;
+
         /// <summary>
         /// PlayAllOnStart成员属性
         /// </summary>
@@ -44,7 +49,7 @@ namespace TAnimation
         /// Key为当前对象所在索引值
         /// Value为当前对象TBaseAnimation组件挂载数量(用于判定挂载的TBaseAnimation组件数量是否变化)
         /// </summary>
-        private Dictionary<int,int> mValideComponentsNumberMap = new Dictionary<int, int>();
+        private Dictionary<int, int> mValideComponentsNumberMap = new Dictionary<int, int>();
 
         /// <summary>
         /// 当前选中对象符合条件的TBaseAnimation动画选择数组映射Map
@@ -62,6 +67,24 @@ namespace TAnimation
             mValideComponentsNumberMap.Clear();
             mValideComponentOptionMap.Clear();
             UpdateValideComponentsInfo();
+            UnRegisterEditorUpdate();
+            RegisterEditorUpadate();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void OnDisable()
+        {
+            UnRegisterEditorUpdate();
+        }
+
+        /// <summary>
+        /// 初始化目标组件
+        /// </summary>
+        private void InitTarget()
+        {
+            mTarget ??= (mTarget as TSequenceAnimation);
         }
 
         /// <summary>
@@ -69,7 +92,7 @@ namespace TAnimation
         /// </summary>
         private void InitValideComponentsInfo()
         {
-            
+
         }
 
         /// <summary>
@@ -83,7 +106,26 @@ namespace TAnimation
 
         public override void OnInspectorGUI()
         {
+            InitTarget();
             serializedObject.Update();
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("播放", GUILayout.ExpandWidth(true)))
+            {
+                mTarget?.StartAllAnim();
+            }
+            if (GUILayout.Button("暂停", GUILayout.ExpandWidth(true)))
+            {
+                mTarget?.PauseAllAnim();
+            }
+            if (GUILayout.Button("继续", GUILayout.ExpandWidth(true)))
+            {
+                mTarget?.ResumeAllAnim();
+            }
+            if (GUILayout.Button("停止", GUILayout.ExpandWidth(true)))
+            {
+                mTarget?.StopAllAnim();
+            }
+            EditorGUILayout.EndHorizontal();
             UpdateValideComponentsInfo();
             EditorGUILayout.BeginVertical();
             EditorGUILayout.PropertyField(mPlayAllOnAwakeProperty);
@@ -116,7 +158,6 @@ namespace TAnimation
             {
                 var animationinfoproperty = mAnimationInfoListProperty.GetArrayElementAtIndex(i);
                 var targetgo = animationinfoproperty.FindPropertyRelative("TargetGo").objectReferenceValue as GameObject;
-                var controlanimation = animationinfoproperty.FindPropertyRelative("ControlAnimation").objectReferenceValue as TBaseAnimation;
                 var newanimcomponentnumber = GetGoAnimationComponentsNumber(targetgo);
                 bool needupdatecomponentoption = false;
                 if (mValideComponentsNumberMap.ContainsKey(i))
@@ -168,7 +209,7 @@ namespace TAnimation
             var controlanimation = controlanimationproperty.objectReferenceValue as TBaseAnimation;
             var controlanimationindexproperty = amimnationinfoproperty.FindPropertyRelative("ControlAnimationIndex");
             var controlanimationindex = controlanimationindexproperty.intValue;
-         
+
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("-", GUILayout.Width(20.0f), GUILayout.Height(20.0f)))
             {
@@ -205,11 +246,47 @@ namespace TAnimation
         }
 
         /// <summary>
+        /// 注入Editor Update
+        /// </summary>
+        private void RegisterEditorUpdate()
+        {
+            EditorApplication.update += EditorUpdate;
+        }
+
+        /// <summary>
+        /// 取消Editor Update注入
+        /// </summary>
+        private void UnregisterEditorUpdate()
+        {
+            EditorApplication.update -= EditorUpdate;
+        }
+
+        /// <summary>
+        /// Editor更新
+        /// </summary>
+        private void EditorUpdate()
+        {
+            if(mTarget == null)
+            {
+                return;
+            }
+            for(int i = 0; i < mTarget.AnimationInfoList.Count; i++)
+            {
+                var animationInfo = mTarget.AnimationInfoList[i];
+                if(animationInfo == null || animationInfo.ControlAnimation == null)
+                {
+                    continue;
+                }
+                animationInfo.ControlAnimation.Update();
+            }
+        }
+
+        /// <summary>
         /// 打印所有挂载的Animation信息
         /// </summary>
         private void PrintAllAnimationInfo()
         {
-            for(int i = 0, length = mAnimationInfoListProperty.arraySize; i < length; i++)
+            for (int i = 0, length = mAnimationInfoListProperty.arraySize; i < length; i++)
             {
                 var amimnationinfoproperty = mAnimationInfoListProperty.GetArrayElementAtIndex(i);
                 var targetgoproperty = amimnationinfoproperty.FindPropertyRelative("TargetGo");

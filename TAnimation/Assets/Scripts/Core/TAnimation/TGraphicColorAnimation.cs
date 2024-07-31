@@ -21,13 +21,13 @@ namespace TAnimation
         /// <summary>
         /// 起始颜色值
         /// </summary>
-        [Tooltip("起始颜色值")]
+        [Header("起始颜色值")]
         public Color StartColor = Color.white;
 
         /// <summary>
         /// 结束颜色值
         /// </summary>
-        [Tooltip("结束颜色值")]
+        [Header("结束颜色值")]
         public Color EndColor = Color.white;
 
         /// <summary>

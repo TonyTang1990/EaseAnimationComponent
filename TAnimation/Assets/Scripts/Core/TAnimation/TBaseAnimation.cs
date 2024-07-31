@@ -20,62 +20,132 @@ namespace TAnimation
         /// <summary>
         /// 是否Awake时就触发播放
         /// </summary>
-        [Tooltip("是否Awake时就触发播放")]
+        [Header("是否Awake时就触发播放")]
         public bool PlayOnAwake = true;
 
         /// <summary>
         /// 缓动类型
         /// </summary>
-        [Tooltip("缓动类型")]
+        [Header("缓动类型")]
         public EasingFunction.Ease EaseType = EasingFunction.Ease.Linear;
+
+        /// <summary>
+        /// 循环类型
+        /// </summary>
+        [Header("循环类型")]
+        public LoopType LoopType = LoopType.None;
+
+        /// <summary>
+        /// 循环次数(-1表示无限次)
+        /// </summary>
+        [Header("循环次数(-1表示无限次)")]
+        public int LoopTimes;
 
         /// <summary>
         /// 开始播放延迟时长
         /// </summary>
-        [Tooltip("播放延迟时长")]
+        [Header("播放延迟时长")]
         [Range(0.0f, 10.0f)]
         public float StartDelayTime = 0.0f;
 
         /// <summary>
         /// Lerp时长
         /// </summary>
-        [Tooltip("动画时长")]
+        [Header("动画时长")]
         [Range(0.0f, 20.0f)]
         public float LerpDurationTime = 2.0f;
 
         /// <summary>
-        /// 是否反向插值动画
+        /// 是否等待执行
         /// </summary>
-        [Tooltip("是否反向插值动画")]
-        public bool IsReverse = false;
+        public bool IsWaitStart
+        {
+            get
+            {
+                return mAnimState == AnimState.WaitStart;
+            }
+        }
 
         /// <summary>
-        /// 是否已经初始化
+        /// 是否执行中
         /// </summary>
-        protected bool HasInit = false;
+        public bool IsExecuting
+        {
+            get
+            {
+                return mAnimState == AnimState.Executing;
+            }
+        }
+
+        /// <summary>
+        /// 是否暂停中
+        /// </summary>
+        public bool IsPaused
+        {
+            get
+            {
+                return mAnimState == AnimState.Paused;
+            }
+        }
+
+        /// <summary>
+        /// 是否已结束
+        /// </summary>
+        public bool IsEnded
+        {
+            get
+            {
+                return mAnimState == AnimState.Ended;
+            }
+        }
+
+        /// <summary>
+        /// 是否是循环动画
+        /// </summary>
+        public bool IsLoop
+        {
+            get
+            {
+                return LoopType == LoopType.Restart || LoopType == LoopType.Yoyo;
+            }
+        }
+
+        /// <summary>
+        /// 是否已经开始
+        /// </summary>
+        protected bool mIsStart = false;
+
+        /// <summary>
+        /// 动画经历时长
+        /// </summary>
+        protected float mAnimTimePassed;
 
         /// <summary>
         /// 当前动画状态
         /// </summary>
-        protected EAnimState mAnimState = EAnimState.WaitStart;
+        protected AnimState mAnimState = AnimState.WaitStart;
 
         /// <summary>
-        /// 延时播放携程
+        /// 已经循环的次数
         /// </summary>
-        protected Coroutine mDelayStartCoroutine;
+        protected int mLoopedTimes;
 
         /// <summary>
-        /// 插值动画携程
+        /// 是否在反向插值动画
         /// </summary>
-        protected Coroutine mAnimCoroutine;
+        protected bool mIsReversePlay = false;
 
         /// <summary>
         /// 插值动画开始回调
+        /// Note:
+        /// 循环动画仅第一次回调
         /// </summary>
         private event Action<TBaseAnimation> mOnLerpAnimBeginEvent;
 
         /// <summary>
         /// 插值动画结束回调
+        /// Note:
+        /// 循环动画需要等待所有动画次数播放完成后才回调
         /// </summary>
         private event Action<TBaseAnimation> mOnLerpAnimEndEvent;
 
@@ -87,6 +157,36 @@ namespace TAnimation
             }
         }
 
+        public void Update()
+        {
+            if(IsWaitStart || IsEnded)
+            {
+                return;
+            }
+            if(!IsAvalibleToPlay())
+            {
+                return;
+            }
+            if(IsExecuting)
+            {
+                mAnimTimePassed += Time.detalTime;
+                if(!mIsStart)
+                {
+                    if(mAnimTimePassed >= StartDelayTime)
+                    {
+                        DoStartAnim();
+                    }
+                }
+                else
+                {
+                    DoLerp(0, LerpDurationTime, mAnimTimePassed);
+                    if(mAnimTimePassed >= LerpDurationTime)
+                    {
+                        OnSingleLerpAnimEnd();
+                    }
+                }
+            }
+        }
         protected void OnDestroy()
         {
 
@@ -101,48 +201,55 @@ namespace TAnimation
         {
             if (IsAvalibleToPlay())
             {
-                if (mAnimState == EAnimState.Executing)
+                if (IsExecuting || IsPaused)
                 {
                     Debug.Log("插值动画正在进行中，强制打断重新开始!");
                     ForceStopAnim();
                 }
                 mOnLerpAnimBeginEvent = onlerpanimbegincb;
                 mOnLerpAnimEndEvent = onlerpanimendcb;
-                mAnimState = EAnimState.Executing;
+                mAnimState = AnimState.Executing;
                 if(Mathf.Approximately(StartDelayTime, float.Epsilon))
                 {
-                    mAnimCoroutine = StartCoroutine(LerpCoroutine());
-                }
-                else
-                {
-                    mDelayStartCoroutine = StartCoroutine(DelayStartCoroutine());
+                    DoStartAnim();
                 }
             }
             else
             {
-                Debug.LogError($"当前脚本:{GetType().Name}或所在对象:{gameObject.name}处于未激活状态，播放失败!");
+                Debug.LogError($"实体对象:{gameObject.name}的动画组件:{GetType().Name}处于未激活状态，播放失败!");
             }
         }
 
         /// <summary>
-        /// 强制结束动画
+        /// 暂停动画
         /// </summary>
-        public void ForceStopAnim()
+        public void PauseAnim()
         {
-            if (mAnimState == EAnimState.Executing)
+            if(IsExecuting)
             {
-                if (mAnimCoroutine != null)
-                {
-                    StopCoroutine(mAnimCoroutine);
-                }
-                mAnimCoroutine = null;
-                if (mDelayStartCoroutine != null)
-                {
-                    StopCoroutine(mDelayStartCoroutine);
-                }
-                mDelayStartCoroutine = null;
-                mOnLerpAnimBeginEvent = null;
-                //强制结束也算结束，调用是为了确保外部逻辑进行正常
+                OnPauseAnim();
+            }
+        }
+
+        /// <summary>
+        /// 继续动画
+        /// </summary>
+        public void ResumeAnim()
+        {
+            if(IsPaused)
+            {
+                OnResumeAnim();
+            }
+        }
+
+        /// <summary>
+        /// 结束动画
+        /// </summary>
+        public void StopAnim()
+        {
+            if(IsExecuting || IsPaused)
+            {
+                // 强制结束也算结束，调用是为了确保外部逻辑正常进行
                 OnLerpAnimEnd();
             }
         }
@@ -153,7 +260,7 @@ namespace TAnimation
         /// <returns></returns>
         public bool IsAvalibleToPlay()
         {
-            if(gameObject.activeInHierarchy && enabled)
+            if (gameObject.activeInHierarchy && enabled)
             {
                 return true;
             }
@@ -164,11 +271,107 @@ namespace TAnimation
         }
 
         /// <summary>
-        /// 响应插值动画开始
+        /// 循环动画是否结束
+        /// </summary>
+        /// <returns></returns>
+        protected bool IsLoopEnd()
+        {
+            if(!IsLoop)
+            {
+                return true;
+            }
+            if(LoopTimes == -1)
+            {
+                return false;
+            }
+            if(LoopType == LoopType.Yoyo)
+            {
+                if(mIsReversePlay)
+                {
+                    return false;
+                }
+            }
+            return mLoopedTimes >= LoopTimes;
+        }
+
+        /// <summary>
+        /// 响应差值动画开始
         /// </summary>
         protected virtual void OnLerpAnimStart()
         {
+            mIsStart = true;
+            mIsReversePlay = false;
+            mLoopedTimes = 0;
+            mAnimTimePassed = 0f;
+            mOnLerpAnimBeginEvent?.Invoke(this);
+            mOnLerpAnimBeginEvent = null;
+        }
 
+        /// <summary>
+        /// 响应动画暂停
+        /// </summary>
+        protected virtual void OnPauseAnim()
+        {
+            if(!IsExecuting)
+            {
+                Debug.LogError($"实体对象:{gameObject.name}的动画组件:{GetType().Name}处于运行中，不应该进入暂停动画流程，请检查代码！");
+                return;
+            }
+            mAnimState = AnimState.Paused;
+        }
+
+        /// <summary>
+        /// 响应动画继续
+        /// </summary>
+        protected virtual void OnResumeAnim()
+        {
+            if (!IsPaused)
+            {
+                Debug.LogError($"实体对象:{gameObject.name}的动画组件:{GetType().Name}处于暂停中，不应该进入继续动画流程，请检查代码！");
+                return;
+            }
+            mAnimState = AnimState.Executing;
+        }
+
+        /// <summary>
+        /// 差值动画结束前(方便做一些自定义清理)
+        /// </summary>
+        protected virtual void OnBeforeLerpAnimEnd()
+        {
+
+        }
+
+
+        /// <summary>
+        /// 单次插值动画结束
+        /// </summary>
+        protected virtual void OnSingleLerpAnimEnd()
+        {
+            mAnimTimePassed = 0f;
+            if(LoopType == LoopType.Restart)
+            {
+                mLoopedTimes++;
+                if(IsLoopEnd())
+                {
+                    OnLerpAnimEnd();
+                }
+            }
+            else if(LoopType == LoopType.Yoyo)
+            {
+                if(mIsReversePlay)
+                {
+                    mLoopedTimes++;
+                }
+                mIsReversePlay = !mIsReversePlay;
+                if(IsLoopEnd())
+                {
+                    OnLerpAnimEnd();
+                }
+            }
+            else
+            {
+                OnLerpAnimEnd();
+            }
         }
 
         /// <summary>
@@ -176,40 +379,30 @@ namespace TAnimation
         /// </summary>
         protected virtual void OnLerpAnimEnd()
         {
-            mAnimState = EAnimState.Ended;
+            OnBeforeLerpAnimEnd();
+            mAnimState = AnimState.Ended;
+            mIsStart = false;
+            mIsReversePlay = false;
+            mLoopedTimes = 0;
+            mAnimTimePassed = 0f;
+            mOnLerpAnimBeginEvent = null;
             mOnLerpAnimEndEvent?.Invoke(this);
             mOnLerpAnimEndEvent = null;
         }
 
         /// <summary>
-        /// 响应插值动画开始
+        /// 执行动画开始
         /// </summary>
         /// <returns></returns>
-        protected IEnumerator DelayStartCoroutine()
+        protected bool DoStartAnim()
         {
-            yield return new WaitForSeconds(StartDelayTime);
-            mDelayStartCoroutine = null;
-            mAnimCoroutine = StartCoroutine(LerpCoroutine());
-        }
-
-        /// <summary>
-        /// 插值携程
-        /// </summary>
-        /// <returns></returns>
-        protected IEnumerator LerpCoroutine()
-        {
-            OnLerpAnimStart();
-            mOnLerpAnimBeginEvent?.Invoke(this);
-            mOnLerpAnimBeginEvent = null;
-            var starttime = Time.time;
-            var endtime = starttime + LerpDurationTime;
-            while (Time.time < endtime)
+            if(mIsStart)
             {
-                DoLerp(starttime, endtime, Time.time);
-                yield return null;
+                Debug.LogError($"实体对象:{gameObject.name}的动画组件:{GetType().Name}已经开始，不应该进入这里！");
+                return false;
             }
-            DoLerp(starttime, endtime, Time.time);
-            OnLerpAnimEnd();
+            OnLerpAnimStart();
+            return true;
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ namespace TAnimation
         /// <summary>
         /// 抖动强度(x,y,z分别代表三个轴的强度)
         /// </summary>
-        [Tooltip("抖动强度(x,y,z分别代表三个轴的强度)")]
+        [Header("抖动强度(x,y,z分别代表三个轴的强度)")]
         public Vector3 ShakeStrength = Vector3.zero;
         
         /// <summary>

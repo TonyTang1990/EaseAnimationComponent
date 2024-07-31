@@ -8,7 +8,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
     <ProjectGuid>{9683A9C8-5AEA-1F28-2C22-D23552205A74}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -64,10 +65,12 @@
     <Compile Include="Assets\Scripts\Core\Ease\EasingFunctions.cs" />
     <Compile Include="Assets\Scripts\Core\Singleton\SingletonMonoBehaviourTemplate.cs" />
     <Compile Include="Assets\Scripts\Core\Singleton\SingletonTemplate.cs" />
-    <Compile Include="Assets\Scripts\Core\TAnimation\EAnimState.cs" />
-    <Compile Include="Assets\Scripts\Core\TAnimation\EAnimType.cs" />
+    <Compile Include="Assets\Scripts\Core\TAnimation\AnimState.cs" />
+    <Compile Include="Assets\Scripts\Core\TAnimation\AnimType.cs" />
+    <Compile Include="Assets\Scripts\Core\TAnimation\Editor\TBaseAnimationEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\TAnimation\LoopType.cs" />
+    <Compile Include="Assets\Scripts\Core\TAnimation\Editor\TSequenceAnimationInspector.cs" />
     <Compile Include="Assets\Scripts\Core\TAnimation\TAlphaAnimation.cs" />
-    <Compile Include="Assets\Scripts\Core\TAnimation\TAnimationGroup.cs" />
     <Compile Include="Assets\Scripts\Core\TAnimation\TBaseAnimation.cs" />
     <Compile Include="Assets\Scripts\Core\TAnimation\TGraphicColorAnimation.cs" />
     <Compile Include="Assets\Scripts\Core\TAnimation\TPositionAnimation.cs" />
