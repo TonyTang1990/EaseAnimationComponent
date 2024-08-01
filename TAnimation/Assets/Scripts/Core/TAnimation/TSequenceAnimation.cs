@@ -294,7 +294,6 @@ namespace TAnimation
                     waitedcompletedanimation.ForceStopAnim();
                 }
                 mParalWailtedCompletedAnimationList.Clear();
-
             }
         }
 
@@ -369,6 +368,7 @@ namespace TAnimation
         {
             Debug.Log($"序列动画对象:{gameObject.name}动画播放完成!");
             mAnimState = AnimState.Ended;
+            mOnSequenceAnimBeginEvent = null;
             mOnSequenceAnimEndEvent?.Invoke(this);
             mOnSequenceAnimEndEvent = null;
             if(IsLoop)

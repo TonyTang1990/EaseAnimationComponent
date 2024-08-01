@@ -26,8 +26,8 @@ namespace TAnimation
 
         void OnEnable()
         {
-            UnRegisterEditorUpdate();
-            RegisterEditorUpadate();
+            UnregisterEditorUpdate();
+            RegisterEditorUpdate();
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace TAnimation
         /// </summary>
         private void OnDisable()
         {
-            UnRegisterEditorUpdate();
+            UnregisterEditorUpdate();
         }
 
         /// <summary>
