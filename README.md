@@ -12,15 +12,19 @@
 
 - TBaseAnimation.cs
 
-  所有插值动画的基类(抽象网络插值动画的流程以及基础支持),支持是否Awake时自动播放，插值类型，延迟时间，持续时间，是否翻转插值效果等基础设置
+  所有插值动画的基类(抽象网络插值动画的流程以及基础支持),支持是否Awake时自动播放，插值类型，延迟时间，持续时间，循环类型设置等基础设置
+
+- TBaseAnimationEditor.cs
+
+  插值动画自定义面板，核心扩展支持了Editor快速模拟播放，暂停，继续，停止按钮功能。
 
 - TSequenceAnimation.cs
 
-  序列动画抽象,负责像Dotween的Sequence一样管理一系列TBaseAnimation的整体播放效果(比如线性播放和并发播放)
+  序列动画抽象,负责像Dotween的Sequence一样管理一系列TBaseAnimation的整体播放效果(比如线性播放和并发播放，目前仅支持单次或无限循环播放两种方式)
 
-- TSequenceAnimationInspector.cs
+- TSequenceAnimationEditor.cs
 
-  序列动画的自定义面板，核心是通过SerializeObject和SerializeProperty编写支持Undo的自定义序列动画面板
+  序列动画的自定义面板，核心是通过SerializeObject和SerializeProperty编写支持Undo的自定义序列动画面板，同时支持了Editor快速模拟播放，暂停，继续，停止按钮功能。
 
 - EasingFunctions.cs
 
