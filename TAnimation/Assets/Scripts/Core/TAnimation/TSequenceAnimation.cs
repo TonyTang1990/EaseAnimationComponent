@@ -186,7 +186,7 @@ namespace TAnimation
                 if (mAnimState == AnimState.Executing)
                 {
                     Debug.Log("序列动画正在进行中，强制打断重新开始!");
-                    ForceStopAnims();
+                    StopAllAnim();
                 }
                 mOnSequenceAnimBeginEvent = onsequenceanimbegincb;
                 mOnSequenceAnimEndEvent = onsequenceanimendcb;
@@ -286,12 +286,12 @@ namespace TAnimation
                 mLinearPlayAnimationNextIndex = AnimationInfoList.Count;
                 if (mCurrentLinearPlayAnimation != null)
                 {
-                    mCurrentLinearPlayAnimation.ForceStopAnim();
+                    mCurrentLinearPlayAnimation.StopAnim();
                 }
                 mCurrentLinearPlayAnimation = null;
                 foreach (var waitedcompletedanimation in mParalWailtedCompletedAnimationList.ToArray())
                 {
-                    waitedcompletedanimation.ForceStopAnim();
+                    waitedcompletedanimation.StopAnim();
                 }
                 mParalWailtedCompletedAnimationList.Clear();
             }

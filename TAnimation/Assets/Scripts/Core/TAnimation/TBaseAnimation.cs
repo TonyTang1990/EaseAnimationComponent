@@ -169,7 +169,7 @@ namespace TAnimation
             }
             if(IsExecuting)
             {
-                mAnimTimePassed += Time.detalTime;
+                mAnimTimePassed += Time.deltaTime;
                 if(!mIsStart)
                 {
                     if(mAnimTimePassed >= StartDelayTime)
@@ -204,7 +204,7 @@ namespace TAnimation
                 if (IsExecuting || IsPaused)
                 {
                     Debug.Log("插值动画正在进行中，强制打断重新开始!");
-                    ForceStopAnim();
+                    StopAnim();
                 }
                 mOnLerpAnimBeginEvent = onlerpanimbegincb;
                 mOnLerpAnimEndEvent = onlerpanimendcb;
@@ -415,7 +415,7 @@ namespace TAnimation
         {
             var t = Mathf.InverseLerp(starttime, endtime, currenttime);
             var easefunc = EasingFunction.GetEasingFunction(EaseType);
-            if(IsReverse == false)
+            if(mIsReversePlay == false)
             {
                 t = easefunc(0, 1, t);
             }

@@ -67,8 +67,8 @@ namespace TAnimation
             mValideComponentsNumberMap.Clear();
             mValideComponentOptionMap.Clear();
             UpdateValideComponentsInfo();
-            UnRegisterEditorUpdate();
-            RegisterEditorUpadate();
+            UnregisterEditorUpdate();
+            RegisterEditorUpdate();
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace TAnimation
         /// </summary>
         private void OnDisable()
         {
-            UnRegisterEditorUpdate();
+            UnregisterEditorUpdate();
         }
 
         /// <summary>
