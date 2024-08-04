@@ -38,6 +38,10 @@
 
 ![EaseDemoScreenCapture](Images/EaseDemoScreenCapture.png)
 
+编辑器面板扩展模拟播放:
+
+![EaseDemoScreenCapture](Images/InspectorSimulation.png)
+
 关于Ease的详细方程选择:
 
 ![EaseLerpFunction](Images/EaseLerpFunction.png)

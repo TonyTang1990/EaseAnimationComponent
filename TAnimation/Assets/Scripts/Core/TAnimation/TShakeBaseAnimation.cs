@@ -29,6 +29,7 @@ namespace TAnimation
         /// </summary>
         protected override void OnLerpAnimEnd()
         {
+            base.OnLerpAnimEnd();
             Restore();
         }
 
